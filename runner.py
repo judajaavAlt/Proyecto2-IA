@@ -7,7 +7,7 @@ pygame.init()
 running = True
 screen = [800, 800]
 window = pygame.display.set_mode(screen)
-escene = 0
+escene = 1
 
 # Load the sprites
 spriteSheet = pygame.image.load("spriteSheet.png")
