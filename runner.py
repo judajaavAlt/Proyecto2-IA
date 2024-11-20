@@ -28,7 +28,6 @@ def launch(white_IA=None, black_IA=None):
         for x in range(2):
             sprite = spriteSheet.subsurface([x*100, y*100, 100, 100])
             sprites.append(pygame.transform.smoothscale_by(sprite, scale))
-    sprites.pop(-1)
 
     # Creates the background
 
@@ -199,23 +198,50 @@ def launch(white_IA=None, black_IA=None):
 
     # Game cycle
     while running:
+        text = None
         window.blit(background, [0, 0])
-        if len(list([item for item in points if item.value != "x2"])) == 0:
-            pass
-        if is_white_turn:
-            if white_horse.is_ia:
-                decision = white_horse.decide_by_ia()
-                white_horse.move(decision, points)
-                is_white_turn = False
+        points_without_x2 = [item for item in points if item.value != "x2"]
+        is_game_continuing = len(list(points_without_x2)) > 0
+
+        if is_game_continuing:
+            if is_white_turn:
+                if white_horse.is_ia:
+                    decision = white_horse.decide_by_ia()
+                    white_horse.move(decision, points)
+                    is_white_turn = False
+                else:
+                    moves = white_horse.render_moves()
             else:
-                moves = white_horse.render_moves()
+                if black_horse.is_ia:
+                    decision = black_horse.decide_by_ia()
+                    black_horse.move(decision, points)
+                    is_white_turn = True
+                else:
+                    moves = black_horse.render_moves()
+            # puntos en pantalla
+            for point in points:
+                point.render()
         else:
-            if black_horse.is_ia:
-                decision = black_horse.decide_by_ia()
-                black_horse.move(decision, points)
-                is_white_turn = True
+            window.blit(background, [0, 0])
+            win_font = pygame.font.Font(size=round(200*scale))
+            star_position = None
+            if white_horse.points > black_horse.points:
+                text = win_font.render("White wins", True, (0, 0, 0))
+                x, y = white_horse.position
+            elif white_horse.points < black_horse.points:
+                text = win_font.render("Black wins", True, (0, 0, 0))
+                x, y = black_horse.position
             else:
-                moves = black_horse.render_moves()
+                text = win_font.render("Draw", True, (0, 0, 0))
+
+            w, h = text.get_size()
+            sw, _ = screen
+            text.set_alpha(250)
+            text_position = [sw/2 - w/2, 800*scale/2 - h/2]
+
+            if white_horse.points != black_horse.points:
+                star_position = [x*100*scale, y*100*scale]
+                window.blit(sprites[13], star_position)
 
         # puntaje
         points_text = font.render(f"{white_horse.points}", True, (0, 0, 0))
@@ -231,13 +257,12 @@ def launch(white_IA=None, black_IA=None):
             window.blit(sprites[10], [570*scale, 800*scale])
         window.blit(sprites[12], [500*scale, 800*scale])
         window.blit(points_text, [500*scale - w, 850*scale - h/2])
-        # puntos en pantalla
-        for point in points:
-            point.render()
-
         # caballos
         white_horse.render()
         black_horse.render()
+
+        if text is not None:
+            window.blit(text, text_position)
 
         pygame.display.update()
 
@@ -245,16 +270,18 @@ def launch(white_IA=None, black_IA=None):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = pygame.mouse.get_pos()
-                position = [math.trunc(x/cell_size), math.trunc(y/cell_size)]
-                if position in moves:
-                    if is_white_turn and not white_horse.is_ia:
-                        white_horse.move(position, points)
-                        is_white_turn = False
-                    elif not is_white_turn and not black_horse.is_ia:
-                        black_horse.move(position, points)
-                        is_white_turn = True
+            elif is_game_continuing:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    x, y = pygame.mouse.get_pos()
+                    position = [math.trunc(x/cell_size),
+                                math.trunc(y/cell_size)]
+                    if position in moves:
+                        if is_white_turn and not white_horse.is_ia:
+                            white_horse.move(position, points)
+                            is_white_turn = False
+                        elif not is_white_turn and not black_horse.is_ia:
+                            black_horse.move(position, points)
+                            is_white_turn = True
 
     # Game finish
     pygame.quit()
