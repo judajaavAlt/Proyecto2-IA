@@ -140,6 +140,25 @@ def launch(white_IA=None, black_IA=None):
         # esta trabajando le dice que movimiento puede tener,
         # utiliza el move_horse para saber, que efecto tendria ese movimiento
         # y genera un hijo por cada movimiento
+        def expandir(self):
+            # Verifica a cual caballo corresponde el turno actual
+            if self.is_white_turn:
+                # Verifica los movimientos disponibles
+                self.get_movements(self.white_position, self.black_position)
+                # Ejecuta el movimiento y lo guarda en un nuevo nodo
+                nuevo_nodo = self.move_horse(self.white_position,
+                                             self.white_points, self.points,
+                                             self.white_has_bonus)
+            else:
+                self.get_movements(self.black_position, self.white_position)
+                nuevo_nodo = self.move_horse(self.black_position,
+                                             self.black_points, self.points,
+                                             self.black_has_bonus)
+            # Guarda el nuevo nodo como hijo
+            self.hijos.append(nuevo_nodo)
+            print(f"Nuevo total de puntos: {nuevo_nodo.total_points}")
+            print(f"Nueva posición: {nuevo_nodo.position}")
+            print(f"Has x2: {nuevo_nodo.has_x2}")
 
     class Horse:
         def __init__(self, is_white, position, image, ia):
