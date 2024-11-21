@@ -144,21 +144,60 @@ def launch(white_IA=None, black_IA=None):
             # Verifica a cual caballo corresponde el turno actual
             if self.is_white_turn:
                 # Verifica los movimientos disponibles
-                self.get_movements(self.white_position, self.black_position)
+                possible_moves = self.get_movements(self.white_position,
+                                                    self.black_position)
                 # Ejecuta el movimiento y lo guarda en un nuevo nodo
-                nuevo_nodo = self.move_horse(self.white_position,
-                                             self.white_points, self.points,
-                                             self.white_has_bonus)
+                for move in possible_moves:
+                    new_total_points, new_has_x2, new_points = self.move_horse(
+                        move,
+                        self.white_points,
+                        self.points,
+                        self.white_has_bonus)
+
+                    # Crea un nodo nuevo con la información del movimiento
+                    nuevo_nodo = nodo(
+                        white_position=move,
+                        black_position=self.black_position,
+                        # is_white_turn=True,
+                        white_points=new_total_points,
+                        black_points=self.black_points,
+                        points=new_points,
+                        white_has_bonus=new_has_x2,
+                        black_has_bonus=self.black_has_bonus,
+                        profundidad=self.profundidad,
+                        parent=self
+                        # valor=
+                        # is_min =
+                        # hijos =
+                    )
             else:
-                self.get_movements(self.black_position, self.white_position)
-                nuevo_nodo = self.move_horse(self.black_position,
-                                             self.black_points, self.points,
-                                             self.black_has_bonus)
+                possible_moves = self.get_movements(self.black_position,
+                                                    self.white_position)
+                for move in possible_moves:
+                    new_total_points, new_has_x2, new_points = self.move_horse(
+                        move,
+                        self.black_points,
+                        self.points,
+                        self.black_has_bonus)
+
+                    # Crea un nodo nuevo con la información del movimiento
+                    nuevo_nodo = nodo(
+                        white_position=self.white_position,
+                        black_position=move,
+                        # is_white_turn=False,
+                        white_points=self.white_points,
+                        black_points=new_total_points,
+                        points=new_points,
+                        white_has_bonus=self.white_has_bonus,
+                        black_has_bonus=new_has_x2,
+                        profundidad=self.profundidad,
+                        parent=self
+                        # valor=
+                        # is_min =
+                        # hijos =
+                    )
             # Guarda el nuevo nodo como hijo
-            self.hijos.append(nuevo_nodo)
-            print(f"Nuevo total de puntos: {nuevo_nodo.total_points}")
-            print(f"Nueva posición: {nuevo_nodo.position}")
-            print(f"Has x2: {nuevo_nodo.has_x2}")
+            self.hijos.append[nuevo_nodo]
 
     class Horse:
         def __init__(self, is_white, position, image, ia):
