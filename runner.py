@@ -61,6 +61,86 @@ def launch(white_IA=None, black_IA=None):
             position = [x*100*scale, y*100*scale]
             window.blit(self.image, position)
 
+    class nodo:  # Clase del nodo
+        def __init__(self, white_position, black_position, is_white_turn,
+                     white_points, black_points, white_has_bonus,
+                     black_has_bonus, points,
+                     profundidad=0, hijos=[], parent=None, is_min=False):
+            # Guarda la información de los caballos
+            self.white_position = white_position
+            self.black_position = black_position
+            self.is_white_turn = is_white_turn
+            self.white_points = white_points
+            self.black_points = black_points
+            self.white_has_bonus = white_has_bonus
+            self.black_has_bonus = black_has_bonus
+            self.points = points
+            self.profundidad = profundidad  # indica a que profundidad del nodo
+            self.parent = parent
+            self.valor = 0  # heuristica
+            self.is_min = is_min  # determina si es min o max
+            # Lista de hijos la cual representa la cantidad
+            #  de movimientos disponibles
+            self.hijos = hijos
+
+        def get_movements(self, position, enemy_pos):
+            possible_movements = []
+
+            if position[1] >= 2:
+                if position[0] >= 1:  # UL
+                    possible_movements.append([position[0] - 1,
+                                               position[1] - 2])
+                if position[0] <= 6:  # UR
+                    possible_movements.append([position[0] + 1,
+                                               position[1] - 2])
+            if position[1] <= 5:
+                if position[0] >= 1:  # DL
+                    possible_movements.append([position[0] - 1,
+                                               position[1] + 2])
+                if position[0] <= 6:  # DR
+                    possible_movements.append([position[0] + 1,
+                                               position[1] + 2])
+            if position[0] >= 2:
+                if position[1] >= 1:  # LU
+                    possible_movements.append([position[0] - 2,
+                                               position[1] - 1])
+                if position[1] <= 6:  # LD
+                    possible_movements.append([position[0] - 2,
+                                               position[1] + 1])
+            if position[0] <= 5:
+                if position[1] >= 1:  # RU
+                    possible_movements.append([position[0] + 2,
+                                               position[1] - 1])
+                if position[1] <= 6:  # RD
+                    possible_movements.append([position[0] + 2,
+                                               position[1] + 1])
+
+            if enemy_pos in possible_movements:
+                possible_movements.remove(enemy_pos)
+
+            return possible_movements
+
+        def move_horse(self, position, total_points, points, has_x2):
+            for point in points:
+                if point.position == position:
+                    if point.value != "x2":
+                        if has_x2:
+                            total_points += int(point.value) * 2
+                            has_x2 = False
+                        else:
+                            total_points += int(point.value)
+                        new_points = [item for item in points if item == point]
+                    elif not has_x2:
+                        has_x2 = True
+                        new_points = [item for item in points if item == point]
+
+            return [total_points, has_x2, new_points]
+
+        # def expandir() esta función primero comprueba con que caballo
+        # esta trabajando le dice que movimiento puede tener,
+        # utiliza el move_horse para saber, que efecto tendria ese movimiento
+        # y genera un hijo por cada movimiento
+
     class Horse:
         def __init__(self, is_white, position, image, ia):
             self.is_white = is_white
@@ -420,3 +500,116 @@ def launch_menu():
 
 
 launch_menu()
+'''
+    # Clase nodo
+    # Descripcion:
+    # Esta clase cumple la funcion de ser los nodos necesarios
+    # para formar el arbol de busqueda
+    #
+    # Input
+    # Recibe la posicion del nodo a crear, la profundidad a la que esta,
+    # si ya lleva al pasajero, los pasos necesarios para llegar al nodo
+    # y su valor, ya sea costo, heuristica o una suma de ambos.
+    #
+    # Creacion de una raiz, para crear un nodo raiz solo es
+    # necesario entregarle la posicion como una tupla
+    class nodo:  # Clase del nodo
+        def __init__(self, posicion, profundidad=0, hijos=[], valor=0):
+            self.posicion = posicion  # Guarda la posición del arbol
+            self.valor = valor  # valor del nodo para busqueda informada
+            self.profundidad = profundidad  # indica a que profundidad del nodo
+            self.expandido = False
+            # Lista de hijos la cual representa la cantidad
+            #  de movimientos disponibles
+            self.hijos = hijos
+
+        def __str__(self):
+            return f"""Soy el nodo: {self.posicion}
+{"Si" if self.tiene_pasajero else "No"} llevo al pasajero
+Mi valor es: {self.valor}
+Estoy en la profundidad {self.profundidad} del arbol
+para llegar hasta mi se han hecho {len(self.pasos)} pasos, estos pasos son:
+{self.pasos}
+{"" if self.expandido else "aun no "}he sido expandido
+{"" if not (self.expandido) else f"""Mis hijos son:
+{self.arriba.posicion if self.arriba is not None else "None"}
+{self.abajo.posicion if self.abajo is not None else "None"}
+{self.izquierda.posicion if self.izquierda is not None else "None"}
+{self.derecha.posicion if self.derecha is not None else "None"}"""}"""
+
+    # Clase arbol
+    # Descripcion:
+    # Esta clase cumple la funcion de ser el gestor del arbol y
+    # llevar la cuenta de sus datos mas importantes
+    #
+    # Input
+    # Recibe el nodo raiz, la posicion de la meta y la posicion del pasajero
+    #
+    # Creacion de un arbol:
+    # para crear un arbol simplemente hay que indicarle en forma de tuplas las
+    # posiciones de la meta y el pasajero, y ademas indicarle
+    # cual sera su nodo inicial
+    # EJ: arbol(nodo(3,4), (7,8), (2,5))
+    class arbol:  # Clase del arbol
+        # inicializador del arbol
+        def __init__(self, raiz):
+            self.raiz = raiz  # Se define la raiz del arbol
+            self.nodos_expandidos = 0  # inicia el contador de nodos expandidos
+            self.profundidad = 0  # define la profundidad inicial
+
+        # Funcion recursiva para imprimir el arbol
+        def __arbol_recursivo__(self, node, deepth):
+            # cuando no se puede expandir el nodo retorna vacio
+            if (node is None):
+                return ""
+            # se imprime de manera recursiva todos los hijos de un nodo
+            # *nota* deepth sirve para añadir tabulacion a las ramas hijo
+            left = self.__arbol_recursivo__(node.izquierda, deepth + 1)
+            right = self.__arbol_recursivo__(node.derecha, deepth + 1)
+            up = self.__arbol_recursivo__(node.arriba, deepth + 1)
+            down = self.__arbol_recursivo__(node.abajo, deepth + 1)
+            # crea una nueva linea por cada rama
+            is_new_line = '\n' if deepth > 0 else ''
+            # se crea un string con los hijos
+            childs = f'{up}{down}{left}{right}'
+            # se crea el string del arbol
+            return f"{is_new_line}{deepth*"  "}{node.posicion}{childs}"
+
+        # Funcion para que cuando se imprima un arbol "print(arbol)" se
+        # muestre su estructura en cascada
+        def __str__(self):
+            # llama a la creacion recursiva del string que se imprimira
+            return self.__arbol_recursivo__(self.raiz, 0)
+
+        # Funcion encargada de expandir los nodos
+        def expandir(self, node):  # Este metodo expande los nodos del arbol
+            # añade uno al contador de nodos expandidos
+            self.nodos_expandidos += 1
+            # le dice al nodo que sera expandido
+            node.expandido = True
+            # comprueba si llego a la meta,
+            # en caso tal se entrega el resultado
+            if (node.posicion == self.meta and node.tiene_pasajero):
+                result = f"""Nodos expandidos: {self.nodos_expandidos}
+Profundidad: {self.profundidad}"""
+                if node.valor > 0:
+                    result += f"\nEl valor de la solucion es: {node.valor}"
+                return [result, node.pasos]
+            # en caso de no encontrar la meta, expandira el nodo creando hijos
+            else:
+                y = node.posicion[0]  # define la posicion en y del nodo padre
+                x = node.posicion[1]  # define la posicion en x del nodo padre
+                # se define la profundidad de los nuevos nodos
+                profundidad = node.profundidad + 1
+                # si el nuevo nodo es el mas profundo, se aumenta la
+                # profundidad total del arbol
+                if profundidad > self.profundidad:
+                    self.profundidad = profundidad
+                # se comprueba si es la casilla del pasajero
+                es_pasajero = node.posicion == self.pasajero
+                # se comprueba si lleva el pasajero o lo acaba de recoger
+                tiene_pasajero = (es_pasajero or
+                                  node.tiene_pasajero)
+                # se obtiene el paso previo a llegar al nodo padre
+                last_step = node.pasos[-1] if len(node.pasos) > 0 else ''
+'''
