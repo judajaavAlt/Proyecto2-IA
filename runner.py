@@ -46,6 +46,105 @@ def launch(white_IA=None, black_IA=None):
                      (200, 200, 220),
                      [0, 800*scale, 800*scale, 100*scale])
 
+    # Min-max solver
+    # heuristic must be a lambda expression
+    def do_min_max(deepth, heuristic, white_position,
+                   black_position, is_white_turn, white_points,
+                   black_points, white_has_bonus, black_has_bonus,
+                   points, is_white):
+
+        heuristic = heuristic(white_points, black_points)
+        # Creates the three
+        tree = Node(white_position, black_position, is_white_turn,
+                    white_points, black_points, white_has_bonus,
+                    black_has_bonus, points)
+        actual_node = tree
+
+        # Ciclo de expansion y poda
+        while True:
+            print(actual_node.white_position)
+            print(actual_node.points)
+            has_parent_ref = (actual_node.parent.valor is not None if
+                              actual_node.parent is not None else False)
+            # Primera vez expansion
+            if (actual_node.profundidad < deepth and
+                    actual_node.hijos == []):
+                actual_node.expandir()
+                actual_node = actual_node.hijos[0]
+                pass
+
+            # Hoja
+            elif actual_node.profundidad == deepth:
+                white_points = actual_node.white_points
+                black_points = actual_node.black_points
+                white_has_bonus = actual_node.white_has_bonus
+                black_has_bonus = actual_node.black_has_bonus
+                actual_node.valor = heuristic(white_points, black_points,
+                                              white_has_bonus, black_has_bonus)
+                actual_node = actual_node.parent
+                pass
+
+            # poda
+            elif actual_node.hijos != [] and not has_parent_ref:
+                sons = actual_node.hijos
+                did_heuristic = [node for node in sons if node.valor is None]
+
+                values = [node.valor for node in sons
+                          if node.valor is not None]
+                if actual_node.is_min:
+                    actual_node.valor = sorted(values)[0]
+                else:
+                    actual_node.valor = sorted(values, reverse=True)[0]
+
+                if len(did_heuristic) > 0:
+                    actual_node = did_heuristic[0]
+                else:
+                    if actual_node.parent is None:
+                        break
+                    actual_node = actual_node.parent
+                pass
+
+            elif actual_node.hijos != [] and has_parent_ref:
+                sons = actual_node.hijos
+                did_heuristic = [node for node in sons if node.valor is None]
+
+                values = [node.valor for node in sons
+                          if node.valor is not None]
+                if actual_node.is_min:
+                    actual_node.valor = sorted(values)[0]
+                else:
+                    actual_node.valor = sorted(values, reverse=True)[0]
+
+                if actual_node.parent.is_min:
+                    if actual_node.parent.valor <= actual_node.valor:
+                        actual_node = actual_node.parent
+                else:
+                    if actual_node.parent.valor >= actual_node.valor:
+                        actual_node = actual_node.parent
+
+                if len(did_heuristic) > 0:
+                    actual_node = did_heuristic[0]
+                else:
+                    actual_node = actual_node.parent
+                pass
+
+        def sort_by_value(node):
+            return node.valor
+        if tree.is_min:
+            node = sorted(tree.hijos, key=sort_by_value)[0]
+            if is_white:
+                position = node.white_position
+            else:
+                position = node.black_position
+        else:
+            node = sorted(tree.hijos, key=sort_by_value, reversed=True)[0]
+            if is_white:
+                position = node.white_position
+            else:
+                position = node.black_position
+
+        return position
+
     # Define the classes
     class Point:
         def __init__(self, position, value, image):
@@ -61,7 +160,7 @@ def launch(white_IA=None, black_IA=None):
             position = [x*100*scale, y*100*scale]
             window.blit(self.image, position)
 
-    class nodo:  # Clase del nodo
+    class Node:  # Clase del nodo
         def __init__(self, white_position, black_position, is_white_turn,
                      white_points, black_points, white_has_bonus,
                      black_has_bonus, points,
@@ -77,7 +176,7 @@ def launch(white_IA=None, black_IA=None):
             self.points = points
             self.profundidad = profundidad  # indica a que profundidad del nodo
             self.parent = parent
-            self.valor = 0  # heuristica
+            self.valor = None  # heuristica
             self.is_min = is_min  # determina si es min o max
             # Lista de hijos la cual representa la cantidad
             #  de movimientos disponibles
@@ -133,6 +232,8 @@ def launch(white_IA=None, black_IA=None):
                     elif not has_x2:
                         has_x2 = True
                         new_points = [item for item in points if item == point]
+                else:
+                    new_points = points
 
             return [total_points, has_x2, new_points]
 
@@ -155,7 +256,7 @@ def launch(white_IA=None, black_IA=None):
                         self.white_has_bonus)
 
                     # Crea un nodo nuevo con la información del movimiento
-                    nuevo_nodo = nodo(
+                    nuevo_nodo = Node(
                         white_position=move,
                         black_position=self.black_position,
                         is_white_turn=not self.is_white_turn,
@@ -166,10 +267,10 @@ def launch(white_IA=None, black_IA=None):
                         black_has_bonus=self.black_has_bonus,
                         profundidad=self.profundidad + 1,
                         parent=self,
-                        valor=0,
                         is_min=not self.is_min,
                         hijos=[],
                     )
+                    self.hijos.append(nuevo_nodo)
             else:
                 possible_moves = self.get_movements(self.black_position,
                                                     self.white_position)
@@ -181,7 +282,7 @@ def launch(white_IA=None, black_IA=None):
                         self.black_has_bonus)
 
                     # Crea un nodo nuevo con la información del movimiento
-                    nuevo_nodo = nodo(
+                    nuevo_nodo = Node(
                         white_position=self.white_position,
                         black_position=move,
                         is_white_turn=not self.is_white_turn,
@@ -192,12 +293,11 @@ def launch(white_IA=None, black_IA=None):
                         black_has_bonus=new_has_x2,
                         profundidad=self.profundidad + 1,
                         parent=self,
-                        valor=0,
                         is_min=not self.is_min,
                         hijos=[],
                     )
+                    self.hijos.append(nuevo_nodo)
             # Guarda el nuevo nodo como hijo
-            self.hijos.append[nuevo_nodo]
 
     class Horse:
         def __init__(self, is_white, position, image, ia):
@@ -277,9 +377,31 @@ def launch(white_IA=None, black_IA=None):
             position = [x*100*scale, y*100*scale]
             window.blit(self.image, position)
 
-        def decide_by_ia(self):
-            x = self.render_moves()
-            return x[0]
+        def decide_by_ia(self, is_white_turn, points,
+                         enemy_position,
+                         enemy_points,
+                         enemy_has_bonus):
+            if self.is_white:
+                def heuristic(white_points_init, black_points_init):
+                    def new_heuristic(white_points, black_points,
+                                      white_has_bonus, black_has_bonus):
+                        puntuacion_final_w = white_points_init - white_points
+                        puntuacion_final_w += 1 if white_has_bonus else 0
+                        puntuacion_final_b = black_points_init - black_points
+                        puntuacion_final_b += 1 if black_has_bonus else 0
+                        return puntuacion_final_w - puntuacion_final_b
+                    return new_heuristic
+            else:
+                def heuristic():
+                    pass
+            self_position = self.position
+            self_points = self.points
+            self_has_bonus = self.has_x2
+            do_min_max(int(self.ia), heuristic, self_position,
+                       enemy_position, is_white_turn, self_points,
+                       enemy_points, self_has_bonus, enemy_has_bonus,
+                       points, self.is_white)
+            return self.position
 
         def move(self, position, points):
             self.position = position
@@ -334,6 +456,8 @@ def launch(white_IA=None, black_IA=None):
                 used_positions.append([x, y])
                 break
 
+    print("first pos:", white_horse.position)
+
     # Game cycle
     while running:
         text = None
@@ -344,14 +468,20 @@ def launch(white_IA=None, black_IA=None):
         if is_game_continuing:
             if is_white_turn:
                 if white_horse.is_ia:
-                    decision = white_horse.decide_by_ia()
+                    decision = white_horse.decide_by_ia(is_white_turn, points,
+                                                        black_horse.position,
+                                                        black_horse.points,
+                                                        black_horse.has_x2)
                     white_horse.move(decision, points)
                     is_white_turn = False
                 else:
                     moves = white_horse.render_moves()
             else:
                 if black_horse.is_ia:
-                    decision = black_horse.decide_by_ia()
+                    decision = black_horse.decide_by_ia(is_white_turn, points,
+                                                        white_horse.position,
+                                                        white_horse.points,
+                                                        white_horse.has_x2)
                     black_horse.move(decision, points)
                     is_white_turn = True
                 else:
@@ -559,96 +689,6 @@ def launch_menu():
 
 launch_menu()
 '''
-    # Clase nodo
-    # Descripcion:
-    # Esta clase cumple la funcion de ser los nodos necesarios
-    # para formar el arbol de busqueda
-    #
-    # Input
-    # Recibe la posicion del nodo a crear, la profundidad a la que esta,
-    # si ya lleva al pasajero, los pasos necesarios para llegar al nodo
-    # y su valor, ya sea costo, heuristica o una suma de ambos.
-    #
-    # Creacion de una raiz, para crear un nodo raiz solo es
-    # necesario entregarle la posicion como una tupla
-    class nodo:  # Clase del nodo
-        def __init__(self, posicion, profundidad=0, hijos=[], valor=0):
-            self.posicion = posicion  # Guarda la posición del arbol
-            self.valor = valor  # valor del nodo para busqueda informada
-            self.profundidad = profundidad  # indica a que profundidad del nodo
-            self.expandido = False
-            # Lista de hijos la cual representa la cantidad
-            #  de movimientos disponibles
-            self.hijos = hijos
-
-        def __str__(self):
-            return f"""Soy el nodo: {self.posicion}
-{"Si" if self.tiene_pasajero else "No"} llevo al pasajero
-Mi valor es: {self.valor}
-Estoy en la profundidad {self.profundidad} del arbol
-para llegar hasta mi se han hecho {len(self.pasos)} pasos, estos pasos son:
-{self.pasos}
-{"" if self.expandido else "aun no "}he sido expandido
-{"" if not (self.expandido) else f"""Mis hijos son:
-{self.arriba.posicion if self.arriba is not None else "None"}
-{self.abajo.posicion if self.abajo is not None else "None"}
-{self.izquierda.posicion if self.izquierda is not None else "None"}
-{self.derecha.posicion if self.derecha is not None else "None"}"""}"""
-
-    # Clase arbol
-    # Descripcion:
-    # Esta clase cumple la funcion de ser el gestor del arbol y
-    # llevar la cuenta de sus datos mas importantes
-    #
-    # Input
-    # Recibe el nodo raiz, la posicion de la meta y la posicion del pasajero
-    #
-    # Creacion de un arbol:
-    # para crear un arbol simplemente hay que indicarle en forma de tuplas las
-    # posiciones de la meta y el pasajero, y ademas indicarle
-    # cual sera su nodo inicial
-    # EJ: arbol(nodo(3,4), (7,8), (2,5))
-    class arbol:  # Clase del arbol
-        # inicializador del arbol
-        def __init__(self, raiz):
-            self.raiz = raiz  # Se define la raiz del arbol
-            self.nodos_expandidos = 0  # inicia el contador de nodos expandidos
-            self.profundidad = 0  # define la profundidad inicial
-
-        # Funcion recursiva para imprimir el arbol
-        def __arbol_recursivo__(self, node, deepth):
-            # cuando no se puede expandir el nodo retorna vacio
-            if (node is None):
-                return ""
-            # se imprime de manera recursiva todos los hijos de un nodo
-            # *nota* deepth sirve para añadir tabulacion a las ramas hijo
-            left = self.__arbol_recursivo__(node.izquierda, deepth + 1)
-            right = self.__arbol_recursivo__(node.derecha, deepth + 1)
-            up = self.__arbol_recursivo__(node.arriba, deepth + 1)
-            down = self.__arbol_recursivo__(node.abajo, deepth + 1)
-            # crea una nueva linea por cada rama
-            is_new_line = '\n' if deepth > 0 else ''
-            # se crea un string con los hijos
-            childs = f'{up}{down}{left}{right}'
-            # se crea el string del arbol
-            return f"{is_new_line}{deepth*"  "}{node.posicion}{childs}"
-
-        # Funcion para que cuando se imprima un arbol "print(arbol)" se
-        # muestre su estructura en cascada
-        def __str__(self):
-            # llama a la creacion recursiva del string que se imprimira
-            return self.__arbol_recursivo__(self.raiz, 0)
-
-        # Funcion encargada de expandir los nodos
-        def expandir(self, node):  # Este metodo expande los nodos del arbol
-            # añade uno al contador de nodos expandidos
-            self.nodos_expandidos += 1
-            # le dice al nodo que sera expandido
-            node.expandido = True
-            # comprueba si llego a la meta,
-            # en caso tal se entrega el resultado
-            if (node.posicion == self.meta and node.tiene_pasajero):
-                result = f"""Nodos expandidos: {self.nodos_expandidos}
 Profundidad: {self.profundidad}"""
                 if node.valor > 0:
                     result += f"\nEl valor de la solucion es: {node.valor}"
