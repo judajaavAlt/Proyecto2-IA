@@ -164,7 +164,7 @@ def launch(white_IA=None, black_IA=None):
                         points=new_points,
                         white_has_bonus=new_has_x2,
                         black_has_bonus=self.black_has_bonus,
-                        profundidad=self.profundidad,
+                        profundidad=self.profundidad + 1,
                         parent=self
                         # valor=
                         # is_min =
