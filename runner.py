@@ -57,13 +57,10 @@ def launch(white_IA=None, black_IA=None):
         # Creates the three
         tree = Node(white_position, black_position, is_white_turn,
                     white_points, black_points, white_has_bonus,
-                    black_has_bonus, points)
+                    black_has_bonus, points, 0, [], None, False)
         actual_node = tree
-
         # Ciclo de expansion y poda
         while True:
-            print(actual_node.white_position)
-            print(actual_node.points)
             has_parent_ref = (actual_node.parent.valor is not None if
                               actual_node.parent is not None else False)
             # Primera vez expansion
@@ -71,7 +68,7 @@ def launch(white_IA=None, black_IA=None):
                     actual_node.hijos == []):
                 actual_node.expandir()
                 actual_node = actual_node.hijos[0]
-                pass
+                continue
 
             # Hoja
             elif actual_node.profundidad == deepth:
@@ -79,11 +76,12 @@ def launch(white_IA=None, black_IA=None):
                 black_points = actual_node.black_points
                 white_has_bonus = actual_node.white_has_bonus
                 black_has_bonus = actual_node.black_has_bonus
-                actual_node.valor = heuristic(white_points, black_points,
-                                              white_has_bonus, black_has_bonus)
+                actual_node.valor = heuristic(white_position,
+                                              white_points, black_points,
+                                              white_has_bonus, black_has_bonus,
+                                              actual_node.points)
                 actual_node = actual_node.parent
-                pass
-
+                continue
             # poda
             elif actual_node.hijos != [] and not has_parent_ref:
                 sons = actual_node.hijos
@@ -102,7 +100,7 @@ def launch(white_IA=None, black_IA=None):
                     if actual_node.parent is None:
                         break
                     actual_node = actual_node.parent
-                pass
+                continue
 
             elif actual_node.hijos != [] and has_parent_ref:
                 sons = actual_node.hijos
@@ -118,31 +116,35 @@ def launch(white_IA=None, black_IA=None):
                 if actual_node.parent.is_min:
                     if actual_node.parent.valor <= actual_node.valor:
                         actual_node = actual_node.parent
+                        continue
                 else:
                     if actual_node.parent.valor >= actual_node.valor:
                         actual_node = actual_node.parent
+                        continue
 
                 if len(did_heuristic) > 0:
                     actual_node = did_heuristic[0]
                 else:
                     actual_node = actual_node.parent
-                pass
+                continue
 
         def sort_by_value(node):
             return node.valor
-        if tree.is_min:
-            node = sorted(tree.hijos, key=sort_by_value)[0]
-            if is_white:
-                position = node.white_position
-            else:
-                position = node.black_position
-        else:
-            node = sorted(tree.hijos, key=sort_by_value, reversed=True)[0]
-            if is_white:
-                position = node.white_position
-            else:
-                position = node.black_position
 
+        node = sorted(tree.hijos, key=sort_by_value, reverse=True)[0]
+        if is_white:
+            position = node.white_position
+        else:
+            position = node.black_position
+
+        def printer(node):
+            text = ""
+            text = f"{" "*node.profundidad}{node.white_position},{node.black_position},{node.valor}\n"
+            for son in node.hijos:
+                text += printer(son)
+            return text
+        print("tree:")
+        print(printer(tree))
         return position
 
     # Define the classes
@@ -182,6 +184,31 @@ def launch(white_IA=None, black_IA=None):
             #  de movimientos disponibles
             self.hijos = hijos
 
+        def __str__(self):
+            this_string = ("positions = " + str(self.white_position) + ", " +
+                           str(self.black_position) + "\n")
+            this_string += ("points = " + str(self.white_points) + ", " +
+                            str(self.black_points) + "\n")
+            this_string += ("bonus = " + str(self.white_has_bonus) + ", " +
+                            str(self.black_has_bonus) + "\n")
+            this_string += "points = \n"
+            for point in self.points:
+                this_string += str(point) + "\n"
+            this_string += f"is_white_turn = {self.is_white_turn}\n"
+            this_string += f"profundidad = {self.profundidad} \n"
+            if self.parent is not None:
+                p = [self.parent.white_position, self.parent.black_position]
+            else:
+                p = None
+            this_string += f"parent = {p}\n"
+            this_string += f"valor = {self.valor}\n"
+            this_string += f"is_min = {self.is_min}\n"
+            this_string += "hijos = \n"
+            for hijo in self.hijos:
+                this_string += f"{hijo.white_position}, {hijo.black_position}"
+                this_string += f", {hijo.valor}\n"
+            return this_string
+
         def get_movements(self, position, enemy_pos):
             possible_movements = []
 
@@ -220,6 +247,7 @@ def launch(white_IA=None, black_IA=None):
             return possible_movements
 
         def move_horse(self, position, total_points, points, has_x2):
+            new_points = points
             for point in points:
                 if point.position == position:
                     if point.value != "x2":
@@ -232,8 +260,6 @@ def launch(white_IA=None, black_IA=None):
                     elif not has_x2:
                         has_x2 = True
                         new_points = [item for item in points if item == point]
-                else:
-                    new_points = points
 
             return [total_points, has_x2, new_points]
 
@@ -383,13 +409,23 @@ def launch(white_IA=None, black_IA=None):
                          enemy_has_bonus):
             if self.is_white:
                 def heuristic(white_points_init, black_points_init):
-                    def new_heuristic(white_points, black_points,
-                                      white_has_bonus, black_has_bonus):
-                        puntuacion_final_w = white_points_init - white_points
+                    def new_heuristic(white_position,
+                                      white_points, black_points,
+                                      white_has_bonus, black_has_bonus,
+                                      points):
+                        manhattan = [(abs(white_position[0] -
+                                          point.position[0]) +
+                                     abs(white_position[1] -
+                                         point.position[1]))
+                                     for point
+                                     in points]
+                        manhattan = sorted(manhattan)[0]
+                        puntuacion_final_w = white_points - white_points_init
                         puntuacion_final_w += 1 if white_has_bonus else 0
-                        puntuacion_final_b = black_points_init - black_points
+                        puntuacion_final_b = black_points - black_points_init
                         puntuacion_final_b += 1 if black_has_bonus else 0
-                        return puntuacion_final_w - puntuacion_final_b
+                        return (puntuacion_final_w - puntuacion_final_b +
+                                manhattan)
                     return new_heuristic
             else:
                 def heuristic():
@@ -397,11 +433,10 @@ def launch(white_IA=None, black_IA=None):
             self_position = self.position
             self_points = self.points
             self_has_bonus = self.has_x2
-            do_min_max(int(self.ia), heuristic, self_position,
-                       enemy_position, is_white_turn, self_points,
-                       enemy_points, self_has_bonus, enemy_has_bonus,
-                       points, self.is_white)
-            return self.position
+            return do_min_max(int(self.ia), heuristic, self_position,
+                              enemy_position, is_white_turn, self_points,
+                              enemy_points, self_has_bonus, enemy_has_bonus,
+                              points, self.is_white)
 
         def move(self, position, points):
             self.position = position
@@ -455,8 +490,7 @@ def launch(white_IA=None, black_IA=None):
                                             black_IA)
                 used_positions.append([x, y])
                 break
-
-    print("first pos:", white_horse.position)
+    last_movement = pygame.time.get_ticks()
 
     # Game cycle
     while running:
@@ -467,23 +501,28 @@ def launch(white_IA=None, black_IA=None):
 
         if is_game_continuing:
             if is_white_turn:
-                if white_horse.is_ia:
+                if (white_horse.is_ia and
+                        pygame.time.get_ticks() - last_movement > 500):
                     decision = white_horse.decide_by_ia(is_white_turn, points,
                                                         black_horse.position,
                                                         black_horse.points,
                                                         black_horse.has_x2)
+
                     white_horse.move(decision, points)
                     is_white_turn = False
+                    last_movement = pygame.time.get_ticks()
                 else:
                     moves = white_horse.render_moves()
             else:
-                if black_horse.is_ia:
+                if (black_horse.is_ia and
+                        pygame.time.get_ticks() - last_movement > 500):
                     decision = black_horse.decide_by_ia(is_white_turn, points,
                                                         white_horse.position,
                                                         white_horse.points,
                                                         white_horse.has_x2)
                     black_horse.move(decision, points)
                     is_white_turn = True
+                    last_movement = pygame.time.get_ticks()
                 else:
                     moves = black_horse.render_moves()
             # puntos en pantalla
@@ -550,6 +589,7 @@ def launch(white_IA=None, black_IA=None):
                         elif not is_white_turn and not black_horse.is_ia:
                             black_horse.move(position, points)
                             is_white_turn = True
+                            last_movement = pygame.time.get_ticks()
 
     # Game finish
     pygame.quit()
