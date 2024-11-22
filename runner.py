@@ -158,17 +158,17 @@ def launch(white_IA=None, black_IA=None):
                     nuevo_nodo = nodo(
                         white_position=move,
                         black_position=self.black_position,
-                        # is_white_turn=True,
+                        is_white_turn=not self.is_white_turn,
                         white_points=new_total_points,
                         black_points=self.black_points,
                         points=new_points,
                         white_has_bonus=new_has_x2,
                         black_has_bonus=self.black_has_bonus,
                         profundidad=self.profundidad + 1,
-                        parent=self
-                        # valor=
-                        # is_min =
-                        # hijos =
+                        parent=self,
+                        valor=0,
+                        is_min=not self.is_min,
+                        hijos=[],
                     )
             else:
                 possible_moves = self.get_movements(self.black_position,
@@ -184,17 +184,17 @@ def launch(white_IA=None, black_IA=None):
                     nuevo_nodo = nodo(
                         white_position=self.white_position,
                         black_position=move,
-                        # is_white_turn=False,
+                        is_white_turn=not self.is_white_turn,
                         white_points=self.white_points,
                         black_points=new_total_points,
                         points=new_points,
                         white_has_bonus=self.white_has_bonus,
                         black_has_bonus=new_has_x2,
-                        profundidad=self.profundidad,
-                        parent=self
-                        # valor=
-                        # is_min =
-                        # hijos =
+                        profundidad=self.profundidad + 1,
+                        parent=self,
+                        valor=0,
+                        is_min=not self.is_min,
+                        hijos=[],
                     )
             # Guarda el nuevo nodo como hijo
             self.hijos.append[nuevo_nodo]
