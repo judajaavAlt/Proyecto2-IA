@@ -408,25 +408,51 @@ def launch(white_IA=None, black_IA=None):
                          enemy_points,
                          enemy_has_bonus):
             if self.is_white:
+                
                 def heuristic(white_points_init, black_points_init):
+                    # def new_heuristic(white_position,
+                    #                   white_points, black_points,
+                    #                   white_has_bonus, black_has_bonus,
+                    #                   points):
+                    #     manhattan = [(abs(white_position[0] -
+                    #                       point.position[0]) +
+                    #                  abs(white_position[1] -
+                    #                      point.position[1]))
+                    #                  for point
+                    #                  in points]
+                    #     manhattan = sorted(manhattan)[0]
+                    #     puntuacion_final_w = white_points - white_points_init
+                    #     puntuacion_final_w += 1 if white_has_bonus else 0
+                    #     puntuacion_final_b = black_points - black_points_init
+                    #     puntuacion_final_b += 1 if black_has_bonus else 0
+                    #     return (puntuacion_final_w - puntuacion_final_b +
+                    #             manhattan)
+                    # return new_heuristic
                     def new_heuristic(white_position,
-                                      white_points, black_points,
-                                      white_has_bonus, black_has_bonus,
-                                      points):
-                        manhattan = [(abs(white_position[0] -
-                                          point.position[0]) +
-                                     abs(white_position[1] -
-                                         point.position[1]))
-                                     for point
-                                     in points]
-                        manhattan = sorted(manhattan)[0]
+                      white_points, black_points,
+                      white_has_bonus, black_has_bonus,
+                      points):
+                        # Encuentra el punto con el mayor valor
+                        if points:
+                            max_point = max(points, key=lambda p: int(p.value) if p.value != "x2" else 0)
+                            manhattan = abs(white_position[0] - max_point.position[0]) + \
+                                        abs(white_position[1] - max_point.position[1])
+                        else:
+                            # Si no hay puntos disponibles, la distancia no importa
+                            manhattan = 0
+
+                        # Calcula la puntuación final para el caballo blanco
                         puntuacion_final_w = white_points - white_points_init
                         puntuacion_final_w += 1 if white_has_bonus else 0
+
+                        # Calcula la puntuación final para el caballo negro
                         puntuacion_final_b = black_points - black_points_init
                         puntuacion_final_b += 1 if black_has_bonus else 0
-                        return (puntuacion_final_w - puntuacion_final_b +
-                                manhattan)
+
+                        # Retorna la diferencia de puntuaciones, penalizando la distancia al punto de mayor valor
+                        return (puntuacion_final_w - puntuacion_final_b - manhattan)
                     return new_heuristic
+  
             else:
                 def heuristic():
                     pass
