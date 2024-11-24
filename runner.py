@@ -53,7 +53,10 @@ def launch(white_IA=None, black_IA=None):
                    black_points, white_has_bonus, black_has_bonus,
                    points, is_white):
 
-        heuristic = heuristic(white_points, black_points)
+        if is_white:
+            heuristic = heuristic(white_points, black_points)
+        else:
+            heuristic = heuristic(black_points, white_points)
         # Creates the three
         tree = Node(white_position, black_position, is_white_turn,
                     white_points, black_points, white_has_bonus,
@@ -67,6 +70,7 @@ def launch(white_IA=None, black_IA=None):
             if (actual_node.profundidad < deepth and
                     actual_node.hijos == []):
                 actual_node.expandir()
+                actual_node.hijos.sort(key=lambda _: random.random())
                 actual_node = actual_node.hijos[0]
                 continue
 
@@ -76,10 +80,13 @@ def launch(white_IA=None, black_IA=None):
                 black_points = actual_node.black_points
                 white_has_bonus = actual_node.white_has_bonus
                 black_has_bonus = actual_node.black_has_bonus
-                actual_node.valor = heuristic(white_position,
-                                              white_points, black_points,
-                                              white_has_bonus, black_has_bonus,
-                                              actual_node.points)
+                if is_white:
+                    heuristic_v = heuristic(white_points, black_points,
+                                            white_has_bonus, black_has_bonus)
+                else:
+                    heuristic_v = heuristic(black_points, white_points,
+                                            black_has_bonus, white_has_bonus)
+                actual_node.valor = heuristic_v
                 actual_node = actual_node.parent
                 continue
             # poda
@@ -137,14 +144,6 @@ def launch(white_IA=None, black_IA=None):
         else:
             position = node.black_position
 
-        def printer(node):
-            text = ""
-            text = f"{" "*node.profundidad}{node.white_position},{node.black_position},{node.valor}\n"
-            for son in node.hijos:
-                text += printer(son)
-            return text
-        print("tree:")
-        print(printer(tree))
         return position
 
     # Define the classes
@@ -408,35 +407,44 @@ def launch(white_IA=None, black_IA=None):
                          enemy_points,
                          enemy_has_bonus):
             if self.is_white:
-                def heuristic(white_points_init, black_points_init):
-                    def new_heuristic(white_position,
-                                      white_points, black_points,
-                                      white_has_bonus, black_has_bonus,
-                                      points):
-                        manhattan = [(abs(white_position[0] -
-                                          point.position[0]) +
-                                     abs(white_position[1] -
-                                         point.position[1]))
-                                     for point
-                                     in points]
-                        manhattan = sorted(manhattan)[0]
-                        puntuacion_final_w = white_points - white_points_init
-                        puntuacion_final_w += 1 if white_has_bonus else 0
-                        puntuacion_final_b = black_points - black_points_init
-                        puntuacion_final_b += 1 if black_has_bonus else 0
-                        return (puntuacion_final_w - puntuacion_final_b +
-                                manhattan)
+                def heuristic(self_points_init, enemy_points_init):
+                    def new_heuristic(self_points, enemy_points,
+                                      self_has_bonus, enemy_has_bonus):
+                        puntuacion_final_s = self_points - self_points_init
+                        puntuacion_final_s += 1 if self_has_bonus else 0
+                        puntuacion_final_e = enemy_points - enemy_points_init
+                        puntuacion_final_e += 1 if enemy_has_bonus else 0
+                        return (puntuacion_final_s - puntuacion_final_e)
                     return new_heuristic
             else:
-                def heuristic():
-                    pass
+                def heuristic(self_points_init, enemy_points_init):
+                    def new_heuristic(self_points, enemy_points,
+                                      self_has_bonus, enemy_has_bonus):
+                        x, y = max(points, key=lambda p: int(p.value) if
+                                   p.value != "x2" else 0).position
+                        manhattan = (abs(self_position[0] - x) +
+                                     abs(self_position[1] - y))
+                        puntuacion_final_s = self_points - self_points_init
+                        puntuacion_final_s += 1 if self_has_bonus else 0
+                        puntuacion_final_e = enemy_points - enemy_points_init
+                        puntuacion_final_e += 1 if enemy_has_bonus else 0
+                        return (puntuacion_final_s - puntuacion_final_e -
+                                manhattan)
+                    return new_heuristic
             self_position = self.position
             self_points = self.points
             self_has_bonus = self.has_x2
-            return do_min_max(int(self.ia), heuristic, self_position,
-                              enemy_position, is_white_turn, self_points,
-                              enemy_points, self_has_bonus, enemy_has_bonus,
-                              points, self.is_white)
+            if self.is_white:
+                x = do_min_max(int(self.ia), heuristic, self_position,
+                               enemy_position, is_white_turn, self_points,
+                               enemy_points, self_has_bonus, enemy_has_bonus,
+                               points, self.is_white)
+            else:
+                x = do_min_max(int(self.ia), heuristic, enemy_position,
+                               self_position, is_white_turn, enemy_points,
+                               self_points, enemy_has_bonus, self_has_bonus,
+                               points, self.is_white)
+            return x
 
         def move(self, position, points):
             self.position = position
@@ -728,26 +736,3 @@ def launch_menu():
 
 
 launch_menu()
-'''
-Profundidad: {self.profundidad}"""
-                if node.valor > 0:
-                    result += f"\nEl valor de la solucion es: {node.valor}"
-                return [result, node.pasos]
-            # en caso de no encontrar la meta, expandira el nodo creando hijos
-            else:
-                y = node.posicion[0]  # define la posicion en y del nodo padre
-                x = node.posicion[1]  # define la posicion en x del nodo padre
-                # se define la profundidad de los nuevos nodos
-                profundidad = node.profundidad + 1
-                # si el nuevo nodo es el mas profundo, se aumenta la
-                # profundidad total del arbol
-                if profundidad > self.profundidad:
-                    self.profundidad = profundidad
-                # se comprueba si es la casilla del pasajero
-                es_pasajero = node.posicion == self.pasajero
-                # se comprueba si lleva el pasajero o lo acaba de recoger
-                tiene_pasajero = (es_pasajero or
-                                  node.tiene_pasajero)
-                # se obtiene el paso previo a llegar al nodo padre
-                last_step = node.pasos[-1] if len(node.pasos) > 0 else ''
-'''
