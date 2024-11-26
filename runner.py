@@ -10,6 +10,8 @@ def launch(white_IA=None, black_IA=None):
     pygame.init()
 
     # Setup the window
+    pygame.display.set_caption("Smart Horses")
+    pygame.display.set_icon(pygame.image.load("icon.png"))
     screen_height = pygame.display.get_desktop_sizes()[0][1]*0.8
     cell_size = math.trunc(screen_height/9)
     screen = [cell_size*8, cell_size*9]
@@ -605,134 +607,138 @@ def launch(white_IA=None, black_IA=None):
 
 
 def launch_menu():
-    # crea la ventana
-    root = tkinter.Tk()
+    try:
+        # crea la ventana
+        root = tkinter.Tk()
 
-    # define las caracteristicas de la ventana
-    screen_size = [root.winfo_screenwidth(), root.winfo_screenheight()]
-    interface_size = [300, 360]
-    margins = f"{int((screen_size[0] - interface_size[0]) / 2)}"
-    margins += f"+{int((screen_size[1] - interface_size[1]) / 2)}"
-    geometry = f'{interface_size[0]}x{interface_size[1]}+{margins}'
-    root.title('Smart Horses launcher')
-    root.geometry(geometry)
+        # define las caracteristicas de la ventana
+        screen_size = [root.winfo_screenwidth(), root.winfo_screenheight()]
+        interface_size = [300, 360]
+        margins = f"{int((screen_size[0] - interface_size[0]) / 2)}"
+        margins += f"+{int((screen_size[1] - interface_size[1]) / 2)}"
+        geometry = f'{interface_size[0]}x{interface_size[1]}+{margins}'
+        root.title('Smart Horses launcher')
+        root.iconphoto(False, tkinter.PhotoImage(file="icon.png"))
+        root.geometry(geometry)
 
-    frame = tkinter.Frame(root)
-    frame.pack()
-    # elige el modo de juego
-    label_game_mode = tkinter.Label(frame, text='Elige el modo de juego')
-    label_game_mode.grid(column=0, row=0, sticky='w')
+        frame = tkinter.Frame(root)
+        frame.pack()
+        # elige el modo de juego
+        label_game_mode = tkinter.Label(frame, text='Elige el modo de juego')
+        label_game_mode.grid(column=0, row=0, sticky='w')
 
-    variable_modo = tkinter.StringVar()
-    variable_modo.set("pvp")
+        variable_modo = tkinter.StringVar()
+        variable_modo.set("pvp")
 
-    radio_pvp = tkinter.Radiobutton(frame,
-                                    text='Jugador vs Jugador',
-                                    value='pvp',
-                                    variable=variable_modo)
-    radio_pvp.grid(column=0, row=1, sticky='w')
+        radio_pvp = tkinter.Radiobutton(frame,
+                                        text='Jugador vs Jugador',
+                                        value='pvp',
+                                        variable=variable_modo)
+        radio_pvp.grid(column=0, row=1, sticky='w')
 
-    radio_pve = tkinter.Radiobutton(frame,
-                                    text='Jugador vs IA',
-                                    value='pve',
-                                    variable=variable_modo)
-    radio_pve.grid(column=0, row=2, sticky='w')
+        radio_pve = tkinter.Radiobutton(frame,
+                                        text='Jugador vs IA',
+                                        value='pve',
+                                        variable=variable_modo)
+        radio_pve.grid(column=0, row=2, sticky='w')
 
-    radio_eve = tkinter.Radiobutton(frame,
-                                    text='IA vs IA',
-                                    value='eve',
-                                    variable=variable_modo)
-    radio_eve.grid(column=0, row=3, sticky='w')
+        radio_eve = tkinter.Radiobutton(frame,
+                                        text='IA vs IA',
+                                        value='eve',
+                                        variable=variable_modo)
+        radio_eve.grid(column=0, row=3, sticky='w')
 
-    # elige la dificultad de la IA
-    label_IA_w = tkinter.Label(frame, text='Elige la IA')
-    variable_IA_w = tkinter.StringVar()
-    variable_IA_w.set("2")
+        # elige la dificultad de la IA
+        label_IA_w = tkinter.Label(frame, text='Elige la IA')
+        variable_IA_w = tkinter.StringVar()
+        variable_IA_w.set("2")
 
-    radio_easy_w = tkinter.Radiobutton(frame,
-                                       text='Facil',
-                                       value='2',
-                                       variable=variable_IA_w)
-    radio_mid_w = tkinter.Radiobutton(frame,
-                                      text='Medio',
-                                      value='4',
-                                      variable=variable_IA_w)
-    radio_hard_w = tkinter.Radiobutton(frame,
-                                       text='Dificil',
-                                       value='6',
-                                       variable=variable_IA_w)
+        radio_easy_w = tkinter.Radiobutton(frame,
+                                           text='Facil',
+                                           value='2',
+                                           variable=variable_IA_w)
+        radio_mid_w = tkinter.Radiobutton(frame,
+                                          text='Medio',
+                                          value='4',
+                                          variable=variable_IA_w)
+        radio_hard_w = tkinter.Radiobutton(frame,
+                                           text='Dificil',
+                                           value='6',
+                                           variable=variable_IA_w)
 
-    # elige la dificultad de la segunda IA
-    label_IA_b = tkinter.Label(frame, text='Elige la segunda IA')
-    variable_IA_b = tkinter.StringVar()
-    variable_IA_b.set("2")
+        # elige la dificultad de la segunda IA
+        label_IA_b = tkinter.Label(frame, text='Elige la segunda IA')
+        variable_IA_b = tkinter.StringVar()
+        variable_IA_b.set("2")
 
-    radio_easy_b = tkinter.Radiobutton(frame,
-                                       text='Facil',
-                                       value='2',
-                                       variable=variable_IA_b)
-    radio_mid_b = tkinter.Radiobutton(frame,
-                                      text='Medio',
-                                      value='4',
-                                      variable=variable_IA_b)
-    radio_hard_b = tkinter.Radiobutton(frame,
-                                       text='Dificil',
-                                       value='6',
-                                       variable=variable_IA_b)
+        radio_easy_b = tkinter.Radiobutton(frame,
+                                           text='Facil',
+                                           value='2',
+                                           variable=variable_IA_b)
+        radio_mid_b = tkinter.Radiobutton(frame,
+                                          text='Medio',
+                                          value='4',
+                                          variable=variable_IA_b)
+        radio_hard_b = tkinter.Radiobutton(frame,
+                                           text='Dificil',
+                                           value='6',
+                                           variable=variable_IA_b)
 
-    # define el boton de iniciar
+        # define el boton de iniciar
 
-    def close_and_launch():
-        global running
-        running = False
-        root.destroy()
-        if variable_modo.get() == "pvp":
-            launch()
-        elif variable_modo.get() == "pve":
-            launch(variable_IA_w.get())
-        else:
-            launch(variable_IA_w.get(), variable_IA_b.get())
+        def close_and_launch():
+            global running
+            running = False
+            root.destroy()
+            if variable_modo.get() == "pvp":
+                launch()
+            elif variable_modo.get() == "pve":
+                launch(variable_IA_w.get())
+            else:
+                launch(variable_IA_w.get(), variable_IA_b.get())
 
-    button_start = tkinter.Button(frame,
-                                  text='Iniciar juego',
-                                  command=close_and_launch)
-    button_start.grid(column=0, row=13, sticky='nsew', pady=10)
+        button_start = tkinter.Button(frame,
+                                      text='Iniciar juego',
+                                      command=close_and_launch)
+        button_start.grid(column=0, row=13, sticky='nsew', pady=10)
 
-    # corre la ventana
-    running = True
+        # corre la ventana
+        running = True
 
-    # define la funcion para cerrar el programa
-    def on_close():
-        global running
-        running = False
-        root.destroy()
+        # define la funcion para cerrar el programa
+        def on_close():
+            global running
+            running = False
+            root.destroy()
 
-    # define el loop de menu
-    while running:
-        if variable_modo.get() == "pve" or variable_modo.get() == "eve":
-            label_IA_w.grid(column=0, row=4, sticky='w')
-            radio_easy_w.grid(column=0, row=5, sticky='w')
-            radio_mid_w.grid(column=0, row=6, sticky='w')
-            radio_hard_w.grid(column=0, row=7, sticky='w')
-        else:
-            label_IA_w.grid_forget()
-            radio_easy_w.grid_forget()
-            radio_mid_w.grid_forget()
-            radio_hard_w.grid_forget()
+        # define el loop de menu
+        while running:
+            if variable_modo.get() == "pve" or variable_modo.get() == "eve":
+                label_IA_w.grid(column=0, row=4, sticky='w')
+                radio_easy_w.grid(column=0, row=5, sticky='w')
+                radio_mid_w.grid(column=0, row=6, sticky='w')
+                radio_hard_w.grid(column=0, row=7, sticky='w')
+            else:
+                label_IA_w.grid_forget()
+                radio_easy_w.grid_forget()
+                radio_mid_w.grid_forget()
+                radio_hard_w.grid_forget()
 
-        if variable_modo.get() == "eve":
-            label_IA_b.grid(column=0, row=8, sticky='w')
-            radio_easy_b.grid(column=0, row=9, sticky='w')
-            radio_mid_b.grid(column=0, row=10, sticky='w')
-            radio_hard_b.grid(column=0, row=11, sticky='w')
-        else:
-            label_IA_b.grid_forget()
-            radio_easy_b.grid_forget()
-            radio_mid_b.grid_forget()
-            radio_hard_b.grid_forget()
-        root.protocol("WM_DELETE_WINDOW", on_close)
-        root.update_idletasks()
-        root.update()
+            if variable_modo.get() == "eve":
+                label_IA_b.grid(column=0, row=8, sticky='w')
+                radio_easy_b.grid(column=0, row=9, sticky='w')
+                radio_mid_b.grid(column=0, row=10, sticky='w')
+                radio_hard_b.grid(column=0, row=11, sticky='w')
+            else:
+                label_IA_b.grid_forget()
+                radio_easy_b.grid_forget()
+                radio_mid_b.grid_forget()
+                radio_hard_b.grid_forget()
+            root.protocol("WM_DELETE_WINDOW", on_close)
+            root.update_idletasks()
+            root.update()
+    except Exception:
+        return ""
 
 
 launch_menu()
